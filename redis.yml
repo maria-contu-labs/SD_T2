@@ -1,0 +1,60 @@
+name: lab-redis
+
+x-redis: &redis
+  image: redis:7
+
+services:
+  n1:
+    <<: *redis
+    container_name: n1
+    command: ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no", "--save", "", "--appendonly", "no"]
+    networks:
+      cluster:
+        ipv4_address: 172.20.0.11
+      clientes:
+        ipv4_address: 172.21.0.11
+
+  n2:
+    <<: *redis
+    container_name: n2
+    command: ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no", "--save", "", "--appendonly", "no", "--replicaof", "172.20.0.11", "6379"]
+    networks:
+      cluster:
+        ipv4_address: 172.20.0.12
+      clientes:
+        ipv4_address: 172.21.0.12
+
+  n3:
+    <<: *redis
+    container_name: n3
+    command: ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no", "--save", "", "--appendonly", "no", "--replicaof", "172.20.0.11", "6379"]
+    networks:
+      cluster:
+        ipv4_address: 172.20.0.13
+      clientes:
+        ipv4_address: 172.21.0.13
+
+  gerador:
+    image: python:3.12-slim
+    container_name: gerador
+    working_dir: /app
+    volumes:
+      - ./gerador:/app
+    command: sleep infinity
+    networks:
+      clientes:
+        ipv4_address: 172.21.0.100
+
+
+networks:
+  cluster:
+    name: lab_cluster
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  clientes:
+    name: lab_clientes
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+

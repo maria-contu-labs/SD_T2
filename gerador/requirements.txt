@@ -1,0 +1,2 @@
+requests==2.32.5
+cassandra-driver==3.30.1

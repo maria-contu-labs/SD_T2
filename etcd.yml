@@ -1,0 +1,78 @@
+name: lab-etcd
+
+x-etcd: &etcd
+  image: quay.io/coreos/etcd:v3.5.21
+  environment: &etcd-env
+    ETCD_DATA_DIR: /data
+    ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+    ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+    ETCD_INITIAL_CLUSTER_TOKEN: lab
+    ETCD_INITIAL_CLUSTER_STATE: new
+    ETCD_INITIAL_CLUSTER: n1=http://172.20.0.11:2380,n2=http://172.20.0.12:2380,n3=http://172.20.0.13:2380
+
+services:
+  n1:
+    <<: *etcd
+    container_name: n1
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: n1
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://172.20.0.11:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://172.21.0.11:2379
+    networks:
+      cluster:
+        ipv4_address: 172.20.0.11
+      clientes:
+        ipv4_address: 172.21.0.11
+  n2:
+    <<: *etcd
+    container_name: n2
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: n2
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://172.20.0.12:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://172.21.0.12:2379
+    networks:
+      cluster:
+        ipv4_address: 172.20.0.12
+      clientes:
+        ipv4_address: 172.21.0.12
+  n3:
+    <<: *etcd
+    container_name: n3
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: n3
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://172.20.0.13:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://172.21.0.13:2379
+    networks:
+      cluster:
+        ipv4_address: 172.20.0.13
+      clientes:
+        ipv4_address: 172.21.0.13
+
+  gerador:
+    build: ./gerador
+    image: lab-gerador:1
+    container_name: gerador
+    working_dir: /app
+    volumes:
+      - ./gerador:/app
+    command: sleep infinity
+    networks:
+      clientes:
+        ipv4_address: 172.21.0.100
+
+
+networks:
+  cluster:
+    name: lab_cluster
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  clientes:
+    name: lab_clientes
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+

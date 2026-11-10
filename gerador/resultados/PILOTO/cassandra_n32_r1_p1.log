@@ -1,0 +1,1 @@
+{"saida": "/app/resultados/PILOTO/cassandra_n32_r1_p1.csv.gz", "sistema": "cassandra", "threads": 16, "seed": 11002048, "chaves": 10000, "valor_bytes": 256, "get_fraction": 0.8, "duration_seconds": 20, "warmup_seconds": 2, "timeout_seconds": 2.0, "started_epoch": 1794272879.7112706, "finished_epoch": 1794272899.715224, "total_attempts": 80762}

@@ -1,0 +1,14 @@
+{
+  "sistema": "etcd",
+  "threads": 32,
+  "seed": 2026,
+  "chaves": 10000,
+  "valor_bytes": 256,
+  "get_fraction": 0.8,
+  "duration_seconds": 20,
+  "warmup_seconds": 2,
+  "timeout_seconds": 2.0,
+  "started_epoch": 1794270775.7235906,
+  "finished_epoch": 1794270795.7401278,
+  "total_attempts": 56145
+}
