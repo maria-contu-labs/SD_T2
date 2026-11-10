@@ -1,0 +1,1 @@
+{"saida": "/app/resultados/PILOTO/etcd_n2_r4_p0.csv.gz", "sistema": "etcd", "threads": 1, "seed": 40002102, "chaves": 10000, "valor_bytes": 256, "get_fraction": 0.8, "duration_seconds": 30, "warmup_seconds": 3, "timeout_seconds": 2.0, "started_epoch": 1794276338.423907, "finished_epoch": 1794276368.4270198, "total_attempts": 36809}

@@ -1,0 +1,14 @@
+{
+  "sistema": "cassandra",
+  "threads": 4,
+  "seed": 31002086,
+  "chaves": 10000,
+  "valor_bytes": 256,
+  "get_fraction": 0.8,
+  "duration_seconds": 30,
+  "warmup_seconds": 3,
+  "timeout_seconds": 2.0,
+  "started_epoch": 1794275867.1906705,
+  "finished_epoch": 1794275897.1962514,
+  "total_attempts": 110216
+}
