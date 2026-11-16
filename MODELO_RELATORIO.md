@@ -98,18 +98,18 @@ A latência inter-nós foi emulada aplicando `tc qdisc replace dev eth0 root net
 | :--- | :--- | :--- |
 | **Comportamento da Latência (p99)** | **Salto de ~3,8 ms para ~209 ms** (Aumento >50x) | **Praticamente Inalterada (~29,8 ms vs. ~27,8 ms no baseline)** |
 | **Comportamento da Vazão Efetiva** | **Queda drástica de 1.240 req/s para 11,7 req/s** (-99%) | **Alta sustentação: 920 req/s** (-12% em relação a 1.050 req/s) |
-| **Mecanismo Subjacente de Rede** | **Duas rodadas de mensagem síncrona ( 	imes 	ext{RTT}$)** | **Gravação local no coordenador + replicação assíncrona** |
+| **Mecanismo Subjacente de Rede** | **Duas rodadas de mensagem síncrona ( $2 x RTT$)** | **Gravação local no coordenador + replicação assíncrona** |
 
 * **etcd (Protocolo Raft — Consenso Síncrono e Líder Único)**:
   * **Papel do Líder**: Toda operação  é obrigatoriamente roteada ou processada pelo nó líder ativo.
-  * **Rounds de Mensagens e Quórum**: Para efetivar uma escrita com garantia linearizável, o líder precisa enviar uma proposta  para os seguidores (ida = 50 ms) e receber o aceite de pelo menos a maioria de quórum (2 de 3 nós, volta = 50 ms). Em seguida, após o *commit*, o líder confirma o sucesso ao cliente. Essa troca síncrona exige **duas rodadas completas de rede ( 	imes 	ext{RTT}$)**:
-    11	ext{Latência}_{	ext{etcd}} pprox 2 	imes 	ext{RTT} = 2 	imes (50	ext{ ms} + 50	ext{ ms}) = 200	ext{ ms}11
+  * **Rounds de Mensagens e Quórum**: Para efetivar uma escrita com garantia linearizável, o líder precisa enviar uma proposta  para os seguidores (ida = 50 ms) e receber o aceite de pelo menos a maioria de quórum (2 de 3 nós, volta = 50 ms). Em seguida, após o *commit*, o líder confirma o sucesso ao cliente. Essa troca síncrona exige **duas rodadas completas de rede (($2 × RTT$):
+    $$Latência_{etcd} ≈ 2 × RTT = 2 × 100 ms = 200 ms$$
   * Esse custo síncrono trava a thread de execução do cliente aguardando a confirmação da maioria pela rede lentificada, reduzindo drasticamente a vazão.
 
 * **Cassandra ( — Modelo Dynamo e Coordenador Local)**:
   * **Papel do Coordenador**: Qualquer nó que recebe a requisição atua como nó coordenador para aquela operação.
   * **Escrita com **: Com nível de consistência , o coordenador grava a mutação na sua tabela em memória (*Memtable*) e no log de commit (*CommitLog*) local, respondendo **imediatamente com sucesso ao cliente**.
-  * **Replicação Assíncrona**: A replicação para os outros 2 nós do anel (=3$) é feita de forma assíncrona em segundo plano via rede de cluster. Como o cliente é liberado antes da replicação remota, a latência de rede inter-nós de +50 ms **não impacta o tempo de resposta percebido pelo cliente**.
+  * **Replicação Assíncrona**: A replicação para os outros 2 nós do anel ($RF=3$) é feita de forma assíncrona em segundo plano via rede de cluster. Como o cliente é liberado antes da replicação remota, a latência de rede inter-nós de +50 ms **não impacta o tempo de resposta percebido pelo cliente**.
 
 2. #### **Pergunta 2 — E1: Saturação, Gargalo de Consenso e Escalamento Vertical**
 > *O que limitou a vazão de cada sistema no E1? Por que o consenso restringe o scale-out de escritas? Que características da implementação (não só do protocolo) contribuíram?*
@@ -117,7 +117,7 @@ A latência inter-nós foi emulada aplicando `tc qdisc replace dev eth0 root net
 | Aspecto Analisado | **etcd** (Consenso Raft / Líder Único) | **Cassandra** (Arquitetura Masterless / Dynamo) |
 | :--- | :--- | :--- |
 | **Gargalo Principal de Saturação** | **CPU/Disk I/O do Nó Líder + Serialização do Raft** | **Saturação Distribuída de CPU/Memória nos 3 Nós** |
-| **Comportamento com $ elevado** | Platô precoce de vazão; p99 cresce acentuadamente | Escalamento linear até saturação paralela de hardware |
+| **Comportamento com $N$ elevado** | Platô precoce de vazão; p99 cresce acentuadamente | Escalamento linear até saturação paralela de hardware |
 | **Restrição ao Scale-Out de Escritas** | **Incapacidade Teórica**: Todas as escritas passam por 1 líder | **Alta Capacidade**: Chaves distribuídas via hash consistente |
 
 * Protocolos de consenso baseados em líder único (como Raft/Paxos) exigem uma **ordenação total estrita** de todas as mutações no log do líder.
@@ -129,7 +129,7 @@ A latência inter-nós foi emulada aplicando `tc qdisc replace dev eth0 root net
 3. #### **Pergunta 3 — E3: Stale Reads sob Rede Normal vs. Latência Elevada**
 > *Quais stale reads foram observados e em que condições (com a latência original da rede e com a latência elevada do E4)?*
 
-| Condição Experimental | **etcd** (Linearizável / Raft) | **Cassandra** (=3, W=1, R=1$) |
+| Condição Experimental | **etcd** (Linearizável / Raft) | **Cassandra** ($RF=3, W=1, R=1$) |
 | :--- | :---: | :---: |
 | **Rede Normal (Baseline)** | **0,0%** (0 / 10.000 pares) | **0,3%** (30 / 10.000 pares) — Esporádico |
 | **Rede Elevada (+50ms / RTT ~100ms)** | **0,0%** (0 / 10.000 pares) | **Aumento Sistemático** — Janela de ~100 ms |
@@ -141,10 +141,10 @@ A latência inter-nós foi emulada aplicando `tc qdisc replace dev eth0 root net
 * **Cassandra (Violação do Princípio de Quórum no Modelo Dynamo)**:
   * **Condição de Quórum de Interseção**: Para garantir a consistência forte em sistemas eventuais (Dynamo), exige-se a regra de interseção:
     11R + W > RF11
-  * **Configuração Utilizada**: Com =3$, =1$ () e =1$ (), temos:
-    11R + W = 1 + 1 = 2 \le 3 \quad 	ext{(Sem garantia de interseção)}11
+  * **Configuração Utilizada**:Com Fator de Replicação $RF = 3$, nível de escrita $W = 1$ (CL=ONE) e nível de leitura $R = 1$ (CL=ONE), temos:
+  $$\mathbf{R + W = 1 + 1 = 2 \le 3} \quad \text{(Sem garantia de interseção de quóruns)}$$
   * **Efeito da Latência Elevada (E4)**: 
-    * Em rede normal, a replicação assíncrona ocorre em $<1	ext{ ms}$, gerando apenas *stale reads* eventuais por disputa de corrida (-bash,3\%$).
+    * Em rede normal, a replicação assíncrona ocorre em $< 1\text{ ms}$, gerando apenas stale reads esporádicos por disputa de corrida (~0,3%).
     * Em rede lenta (+50ms por sentido / RTT ~100ms), a replicação assíncrona enviada do nó de escrita () para os outros nós atrasa ~100 ms. Ao fazer um  no nó  imediatamente após a confirmação do  no , o nó  responde com seu valor local desatualizado, gerando um **aumento sistemático de *stale reads***.
 
 4.#### **Pergunta 4 — E5: Partição de Rede, Teorema CAP e Reconciliação**
@@ -188,11 +188,11 @@ A latência inter-nós foi emulada aplicando `tc qdisc replace dev eth0 root net
 
 | Origem do Comportamento | **Modelo Teórico de Consistência** | **Detalhes de Implementação de Software** |
 | :--- | :--- | :--- |
-| **Aspectos Determinados** | Duplo RTT no consenso síncrono vs. escrita local ; Escolha CP vs. AP no Teorema CAP; Regra de quórum +W \le RF$. | Protocolo de transporte (gRPC HTTP/2 vs. CQL binário); política de  em disco; pool de conexões do driver cliente. |
+| **Aspectos Determinados** |Duplo RTT no consenso síncrono vs. escrita local em CL=ONE; Escolha CP vs. AP no Teorema CAP; Regra de quórum $R + W \le RF$. | Protocolo de transporte (gRPC HTTP/2 vs. CQL binário); política de **fsync em disco**; pool de conexões do driver cliente. |
 | **Peso na Conclusão Final** | **Fator Predominante (Macro)** | **Fator Secundário (Micro)** |
 
 * **Evidências do Predomínio do Modelo Teórico**:
-  * Os comportamentos fundamentais observados — a queda da vazão sob latência elevada no etcd (duas rodadas de rede síncrona), a rejeição de requisições no nó isolado do etcd no E5 (preservação de CP) e o surgimento de *stale reads* no Cassandra (+W=2 \le RF=3$) — decorrem **direta e inevitavelmente das definições matemáticas dos modelos de Consenso Raft e Consistência Eventual Dynamo**.
+  * Os comportamentos fundamentais observados — a queda da vazão sob latência elevada no etcd (duas rodadas de rede síncrona), a rejeição de requisições no nó isolado do etcd no E5 (preservação de CP) e o surgimento de *stale reads* no Cassandra ($R + W = 1 + 1 = 2 \le RF = 3$) — decorrem **direta e inevitavelmente das definições matemáticas dos modelos de Consenso Raft e Consistência Eventual Dynamo**.
 * **Evidências do Impacto Secundário da Implementação**:
   * A magnitude exata das latências e dos tempos de resposta sob carga é influenciada por fatores de software: o etcd realiza  síncrono no disco para garantir durabilidade por padrão, enquanto o Cassandra utiliza memtables otimizadas em memória; o driver do Cassandra lida com failover instantâneo via pool de sockets, enquanto o cliente HTTP do etcd precisa de pequenas tentativas de reconexão.
 * **Conclusão de Validade**: Os resultados quantitativos e qualitativos obtidos no laboratório **são primariamente atribuíveis ao modelo de consistência teórico**, sendo os detalhes de implementação responsáveis apenas pela modulação fina das métricas.
