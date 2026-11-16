@@ -1,59 +1,24 @@
-# Status do trabalho — E6 (Failover / Queda de Nó)
+# E6 — Revisão dos resultados (16/11/2026)
 
-#### Estado atual (15/11/2026)
-**Execução e validação do Experimento 6 (E6) concluídas com sucesso para etcd e Cassandra.**
+**Estado: execuções preliminares existentes; interpretação precisa ser corrigida. E6 não está concluído para entrega.**
 
-* Injeção de falha: Interrupção abrupta do nó alvo via `docker kill` aos **45 segundos** de execução, mantendo o nó fora do ar por **60 segundos** (janela de 45 s a 105 s).
-* Nó alvo no **etcd**: O script detectou dinamicamente o líder ativo via `etcdctl` (**nó `n3`**, IP `172.21.0.13`) e aplicou a queda nele para testar a reeleição de líder.
-* Nó alvo no **Cassandra**: Selecionado o **nó `n1`** (`172.21.0.11`).
-* Reinicialização (`docker start` / `orquestrar.py`): Aos 105 segundos, o nó atingido foi religado e reintegrado ao cluster durante 75 segundos.
-* Duração total por repetição: 190 segundos (45s normal $\rightarrow$ 60s nó morto $\rightarrow$ 75s pós-reinício), com 3 repetições completas por sistema.
-* Automação executada via `orquestrar.py` e encapsulada em `./scripts/executar_e6.sh`.
+O ZIP possui três arquivos de repetição para etcd (queda documentada do líder n3) e Cassandra (queda de n1), cada um com janela de 190 s e eventos de desligamento/reinício após ~45/~105 s.
 
----
+## Contagens reais de sucessos / erros, todas as operações
 
-#### Resultados e estatísticas da carga no E6
+| Sistema | r1 | r2 | r3 |
+|---|---:|---:|---:|
+| etcd | 54.172 / 85 | 54.388 / 94 | 55.066 / 91 |
+| Cassandra | 110.850 / 45.523 | 145.233 / 57.662 | 162.808 / 63.642 |
 
-| Sistema | N total | Nó Alvo Morto | Repetição | Tentativas Totais Registradas | Comportamento na Queda (45–105s) | Recuperação pós-reinício (105–190s) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **etcd** | 2 | **`n3` (Líder)** | r1 / r2 / r3 | ~54.600 / repetição | Breve janela de erros/timeout durante reeleição; estabilizado em `n1`/`n2` | `n3` reiniciado e reintegrado como seguidor |
-| **Cassandra** | 8 | **`n1`** | r1 / r2 / r3 | ~195.000 / repetição | Sem interrupção global; driver redireciona tráfego para `n2` e `n3` | `n1` reconectado e sincronizado |
+No Cassandra, a taxa geral de erros variou entre **28,10% e 29,11%** nas repetições. Na r1, durante a falha, 21.454 operações destinadas a n1 falharam; após religar n1, outras 24.069 operações direcionadas a ele falharam. Os nós n2 e n3 continuaram recebendo operações bem-sucedidas. O erro predominante foi `NoHostAvailable`.
 
----
+A explicação mais provável está em `gerador/clientes.py`: sessões Cassandra foram construídas com `HostFilterPolicy` apontando para um host, **sem failover transparente dessa sessão**. Não afirmar failover `<100ms` nem 0 erros; não existe tempo de failover validado nos dados apresentados.
 
-#### Análise do tempo de failover e dinâmica de reeleição
+## Pendências obrigatórias
 
-* **etcd (Queda do Líder `n3` — Consenso Raft)**:
-  * **Detecção e Eleição**: Com a queda abrupta do líder `n3`, os seguidores `n1` e `n2` deixaram de receber os impulsos periódicos (*heartbeats*). Ao esgotar o tempo limite de *election timeout*, os nós incrementaram o *Raft Term* e iniciaram uma nova eleição.
-  * **Tempo de Failover**: As requisições direcionadas ao antigo líder falharam momentaneamente durante o intervalo de eleição (~1,2 a 2,5 s). Assim que um dos seguidores obteve a maioria dos votos (2/3) e assumiu como novo líder, as escritas e leituras retornaram com 100% de sucesso nos nós ativos.
-  * **Reintegração**: Quando o contêiner `n3` foi reiniciado aos 105s, ele reconheceu o novo líder, ingressou no cluster como seguidor e sincronizou seu log Raft sem causar qualquer indisponibilidade.
-
-* **Cassandra (Queda do Nó `n1` — Arquitetura Masterless)**:
-  * **Comportamento do Driver**: Como o Cassandra possui uma arquitetura sem nó mestre (*masterless*), as requisições enviadas ao coordenador morto `n1` retornaram falha pontual até que o cliente Python (`cassandra-driver`) detectou a perda da conexão e redirecionou automaticamente todas as requisições para os nós remanescentes `n2` e `n3`.
-  * **Tempo de Failover**: O serviço global continuou operando quase ininterruptamente com `CL=ONE`, acumulando zero erros na carga consolidada distribuída.
-
----
-
-#### Comandos de execução e validação utilizados
-
-```bash
-# Execução completa do E6 (detecção automática do líder etcd, queda por 60s, reinício e limpeza):
-PROCESSOS=2 ./scripts/executar_e6.sh etcd 2
-
-# Execução completa para o Cassandra (queda do nó n1 por 60s, reinício e limpeza):
-PROCESSOS=2 ./scripts/executar_e6.sh cassandra 8
-
-# Verificação manual da queda e reinício de nó:
-docker kill n1                      # Interrompe o nó abruptamente
-docker start n1                     # Reinicia e recupera o nó
-
-# Geração dos gráficos de linha do tempo:
-python3 analisar.py --input gerador/resultados --output graficos
-```
-
----
-
-#### O que falta para declarar E6 concluído no LAD
-1. Executar o script `executar_e6.sh` no ambiente oficial do LAD com os $N_{\text{ótimo}}$ definitivos.
-2. Registrar a linha do tempo de completações/erros por segundo nos gráficos (`graficos/e6_etcd_*_timeline.png` e `graficos/e6_cassandra_*_timeline.png`).
-3. Fundamentar a Pergunta 5 do relatório quantificando com precisão o tempo de *election timeout* do Raft no etcd e o tempo de failover do driver no Cassandra.
+1. Executar variante **(b) falha de seguidor** no etcd (e documentar variante alternativa no Cassandra), repetida três vezes; identificar papel do alvo em cada rodada.
+2. Separar client Cassandra fixo (útil em E3/E5) de cliente tolerante a falha em E6 e documentar como muda a semântica das requisições.
+3. Quantificar intervalo entre falha e recuperação de PUTs por destino com eventos sincronizados, distinguindo sucesso em nós remanescentes de redirecionamento efetivo.
+4. Corrigir reconexão depois da reinicialização, executar novamente e guardar logs/CPU.
+5. Refazer no LAD após determinar N ótimo no E1.

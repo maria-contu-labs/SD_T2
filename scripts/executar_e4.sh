@@ -46,7 +46,10 @@ echo "🌐 3/5. Aplicando latência de 50ms por sentido (RTT ~100ms)..."
 
 echo ""
 echo "📡 Verificando RTT inter-nós:"
-./scripts/rtt.sh n1 172.20.0.12 || true
+# Registra o ping e interrompe a execução se a conectividade falhar.
+mkdir -p gerador/resultados/E4
+./scripts/rtt.sh n1 172.20.0.12 | tee "gerador/resultados/E4/${SISTEMA}_rtt_inicial.log"
+echo 'Confira se o RTT observado está próximo de 100 ms antes de interpretar os resultados.' 
 
 echo ""
 echo "⚡ 4/5. Executando as 3 repetições da carga do E4..."
