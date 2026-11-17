@@ -1,0 +1,13 @@
+arquivo,sistema,pares_validos,stale,erros,taxa_stale
+gerador/resultados/E3/cassandra_stale_alta_r1.csv.gz,cassandra,10000,10000,0,1.0
+gerador/resultados/E3/cassandra_stale_alta_r2.csv.gz,cassandra,10000,10000,0,1.0
+gerador/resultados/E3/cassandra_stale_alta_r3.csv.gz,cassandra,10000,10000,0,1.0
+gerador/resultados/E3/cassandra_stale_original_r1.csv.gz,cassandra,10000,1,0,0.0001
+gerador/resultados/E3/cassandra_stale_original_r2.csv.gz,cassandra,10000,2,0,0.0002
+gerador/resultados/E3/cassandra_stale_original_r3.csv.gz,cassandra,10000,25,0,0.0025
+gerador/resultados/E3/etcd_stale_alta_r1.csv.gz,etcd,10000,0,0,0.0
+gerador/resultados/E3/etcd_stale_alta_r2.csv.gz,etcd,10000,0,0,0.0
+gerador/resultados/E3/etcd_stale_alta_r3.csv.gz,etcd,10000,0,0,0.0
+gerador/resultados/E3/etcd_stale_original_r1.csv.gz,etcd,10000,0,0,0.0
+gerador/resultados/E3/etcd_stale_original_r2.csv.gz,etcd,10000,0,0,0.0
+gerador/resultados/E3/etcd_stale_original_r3.csv.gz,etcd,10000,0,0,0.0

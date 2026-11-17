@@ -1,1 +1,0 @@
-{"saida": "/app/resultados/E4/cassandra_n8_r1_p1.csv.gz", "sistema": "cassandra", "threads": 4, "seed": 11002048, "chaves": 10000, "valor_bytes": 256, "get_fraction": 0.8, "duration_seconds": 180, "warmup_seconds": 30, "timeout_seconds": 2.0, "started_epoch": 1794770111.3616455, "finished_epoch": 1794770291.369291, "total_attempts": 65375}

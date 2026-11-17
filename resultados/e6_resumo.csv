@@ -1,0 +1,5 @@
+cenario,repeticoes,mediana_primeiro_PUT_ok_s,execucoes_com_PUT_ok_durante_falha,observacao
+etcd_lider,3,4.909,3,intervalo a primeira conclusao bem sucedida; nao equivale a tempo de eleicao
+etcd_seguidor,3,1.949,3,intervalo a primeira conclusao bem sucedida; nao equivale a tempo de eleicao
+cassandra_coordenador_n1,3,0.017,3,intervalo a primeira conclusao bem sucedida; nao equivale a tempo de eleicao
+cassandra_coordenador_n2,3,0.002,3,intervalo a primeira conclusao bem sucedida; nao equivale a tempo de eleicao
