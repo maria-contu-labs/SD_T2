@@ -112,8 +112,14 @@ def main():
             print(f"Processo {index}: {threads} threads, semente {seed}", flush=True)
         log_event(events, "geradores_iniciados", f"processos={args.processes}")
         time.sleep(args.before)
-        if any(pr.poll() is not None for pr in procs):
-            raise RuntimeError("Gerador terminou antes da falha; confira os logs")
+        finished = [(i, pr.returncode) for i, pr in enumerate(procs) if pr.poll() is not None]
+        if finished:
+            details = []
+            for index, code in finished:
+                logfile = root / f"{prefix}_p{index}.log"
+                tail = logfile.read_text(encoding="utf-8", errors="replace")[-1800:] if logfile.exists() else "log ausente"
+                details.append(f"processo={index} retorno={code} log={tail}")
+            raise RuntimeError("Gerador terminou antes da falha. " + " | ".join(details))
 
         # Resolve o papel no instante da falha, não antes da carga inicial.
         leader = etcd_leader() if args.system == "etcd" else None

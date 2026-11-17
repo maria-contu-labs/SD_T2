@@ -20,10 +20,10 @@ esac
 # Limpeza automática garantida mesmo em caso de erro ou interrupção
 cleanup() {
     echo ""
-    echo "🧹 [LIMPEZA] Reconectando nó n1 se necessário e encerrando contêineres..."
+    echo "[LIMPEZA] Reconectando nó n1 se necessário e encerrando contêineres..."
     ./scripts/cura.sh 2>/dev/null || true
     docker compose -f "${SISTEMA}.yml" down -v 2>/dev/null || true
-    echo "✅ Limpeza concluída com sucesso."
+    echo "Limpeza concluída com sucesso."
 }
 trap cleanup EXIT
 
@@ -34,20 +34,20 @@ echo " Cronograma por repetição: 45s normal -> 60s partição -> 75s cura"
 echo "============================================================"
 
 echo ""
-echo "🚀 1/4. Subindo ambiente Docker para $SISTEMA..."
+echo "1/4. Subindo ambiente Docker para $SISTEMA..."
 ./scripts/ambiente.sh "$SISTEMA"
 
 echo ""
-echo "⚙️ 2/4. Criando esquema e chaves de teste..."
+echo "2/4. Criando esquema e chaves de teste..."
 ./scripts/preparar.sh "$SISTEMA"
 
 if [ "$SISTEMA" = "cassandra" ]; then
-    echo "⏳ Aguardando a estabilização completa da porta CQL (15s)..."
+    echo "Aguardando a estabilização completa da porta CQL (15s)..."
     sleep 15
 fi
 
 echo ""
-echo "⚡ 3/4. Executando as 3 repetições do E5 com orquestração de partição..."
+echo "3/4. Executando as 3 repetições do E5 com orquestração de partição..."
 
 for REP in 1 2 3; do
     echo ""
@@ -62,8 +62,8 @@ for REP in 1 2 3; do
     python3 analisar.py --input gerador/resultados --output graficos > /dev/null 2>&1 || true
 
     echo ""
-    echo "📊 Status da Repetição $REP concluída."
+    echo "Status da Repetição $REP concluída."
 done
 
 echo ""
-echo "🏁 4/4. Finalizando o Experimento E5 para $SISTEMA!"
+echo "4/4. Finalizando o Experimento E5 para $SISTEMA!"

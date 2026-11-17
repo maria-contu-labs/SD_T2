@@ -23,10 +23,10 @@ TARGET_NODE=""
 
 cleanup() {
     echo ""
-    echo "🧹 [LIMPEZA] Garantindo que todos os nós estejam rodando e encerrando contêineres..."
+    echo "[LIMPEZA] Garantindo que todos os nós estejam rodando e encerrando contêineres..."
     docker start n1 n2 n3 2>/dev/null || true
     docker compose -f "${SISTEMA}.yml" down -v 2>/dev/null || true
-    echo "✅ Limpeza concluída com sucesso."
+    echo "Limpeza concluída com sucesso."
 }
 trap cleanup EXIT
 
@@ -37,15 +37,15 @@ echo " Cronograma por repetição: 45s normal -> 60s nó morto -> 75s pós-rein�
 echo "============================================================"
 
 echo ""
-echo "🚀 1/4. Subindo ambiente Docker para $SISTEMA..."
+echo "1/4. Subindo ambiente Docker para $SISTEMA..."
 ./scripts/ambiente.sh "$SISTEMA"
 
 echo ""
-echo "⚙️ 2/4. Criando esquema e chaves de teste..."
+echo "2/4. Criando esquema e chaves de teste..."
 ./scripts/preparar.sh "$SISTEMA"
 
 if [ "$SISTEMA" = "cassandra" ]; then
-    echo "⏳ Aguardando a estabilização completa da porta CQL (15s)..."
+    echo "Aguardando a estabilização completa da porta CQL (15s)..."
     sleep 15
 fi
 
@@ -71,7 +71,7 @@ else
 fi
 
 echo ""
-echo "⚡ 3/4. Executando as 3 repetições do E6 com queda do nó $TARGET_NODE..."
+echo "3/4. Executando as 3 repetições do E6 com queda do nó $TARGET_NODE..."
 
 for REP in 1 2 3; do
     echo ""
@@ -84,8 +84,8 @@ for REP in 1 2 3; do
     python3 analisar.py --input gerador/resultados --output graficos > /dev/null 2>&1 || true
 
     echo ""
-    echo "📊 Status da Repetição $REP concluída."
+    echo "Status da Repetição $REP concluída."
 done
 
 echo ""
-echo "🏁 4/4. Finalizando o Experimento E6 para $SISTEMA!"
+echo "4/4. Finalizando o Experimento E6 para $SISTEMA!"

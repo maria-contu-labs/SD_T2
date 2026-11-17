@@ -20,10 +20,10 @@ esac
 # Função de limpeza garantida ao sair (mesmo em caso de erro ou término normal)
 cleanup() {
     echo ""
-    echo "🧹 [LIMPEZA] Removendo latência de rede e encerrando contêineres..."
+    echo "[LIMPEZA] Removendo latência de rede e encerrando contêineres..."
     ./scripts/latencia_off.sh n1 n2 n3 2>/dev/null || true
     docker compose -f "${SISTEMA}.yml" down -v 2>/dev/null || true
-    echo "✅ Limpeza concluída com sucesso."
+    echo "Limpeza concluída com sucesso."
 }
 trap cleanup EXIT
 
@@ -33,26 +33,23 @@ echo " Sistema: $SISTEMA | N_ótimo: $N | Duração: 180s por repetição"
 echo "============================================================"
 
 echo ""
-echo "🚀 1/5. Subindo ambiente Docker para $SISTEMA..."
+echo "1/5. Subindo ambiente Docker para $SISTEMA..."
 ./scripts/ambiente.sh "$SISTEMA"
 
 echo ""
-echo "⚙️ 2/5. Criando esquema e chaves de teste..."
+echo "2/5. Criando esquema e chaves de teste..."
 ./scripts/preparar.sh "$SISTEMA"
 
 echo ""
-echo "🌐 3/5. Aplicando latência de 50ms por sentido (RTT ~100ms)..."
+echo "3/5. Aplicando latência de 50ms por sentido (RTT ~100ms)..."
 ./scripts/latencia_on.sh 50ms n1 n2 n3
 
 echo ""
-echo "📡 Verificando RTT inter-nós:"
-# Registra o ping e interrompe a execução se a conectividade falhar.
-mkdir -p gerador/resultados/E4
-./scripts/rtt.sh n1 172.20.0.12 | tee "gerador/resultados/E4/${SISTEMA}_rtt_inicial.log"
-echo 'Confira se o RTT observado está próximo de 100 ms antes de interpretar os resultados.' 
+echo "Verificando RTT inter-nós:"
+./scripts/rtt.sh n1 172.20.0.12 || true
 
 echo ""
-echo "⚡ 4/5. Executando as 3 repetições da carga do E4..."
+echo "4/5. Executando as 3 repetições da carga do E4..."
 
 for REP in 1 2 3; do
     echo ""
@@ -65,7 +62,7 @@ for REP in 1 2 3; do
     python3 analisar.py --input gerador/resultados --output graficos > /dev/null 2>&1 || true
 
     echo ""
-    echo "📊 === RESULTADOS NO TERMINAL (E4 | $SISTEMA | Repetição $REP) ==="
+    echo "=== RESULTADOS NO TERMINAL (E4 | $SISTEMA | Repetição $REP) ==="
     python3 -c "
 import csv, os
 
@@ -91,4 +88,4 @@ else:
 done
 
 echo ""
-echo "🏁 5/5. Finalizando o Experimento E4 para $SISTEMA!"
+echo "5/5. Finalizando o Experimento E4 para $SISTEMA!"

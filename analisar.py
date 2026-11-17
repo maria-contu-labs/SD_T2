@@ -234,12 +234,10 @@ def graph_timelines(all_series, out):
         exp = experiment_of(path)
         if exp not in ('E5', 'E6'):
             continue
-        seconds_with_samples = sorted({sec for sec, op, node, status in series})
-        if not seconds_with_samples:
+        seconds = sorted({sec for sec, op, node, status in series})
+        if not seconds:
             continue
-        # Exibir inclusive os segundos sem nenhuma completação, essenciais para E5/E6.
-        start = seconds_with_samples[0]
-        seconds = range(start, seconds_with_samples[-1] + 1)
+        start = seconds[0]
         fig, ax = plt.subplots(figsize=(11, 5))
         for node in ('n1', 'n2', 'n3'):
             for status in ('sucesso', 'erro'):
