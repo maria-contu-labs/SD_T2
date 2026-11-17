@@ -10,3 +10,14 @@ __pycache__/
 # Resultados locais e gráficos gerados
 gerador/resultados/PILOTO/
 graficos/
+# Arquivos locais de execucao
+logs/
+gerador/resultados/
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+.env
+*.sh.bak
+README.md.bak
+aplicar_patch_ambiente.py

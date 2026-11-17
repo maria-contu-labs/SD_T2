@@ -29,6 +29,7 @@ else
       if [ "$(printf '%s\n' "$STATUS" | grep -Ec '^UN[[:space:]]+' || true)" -eq 3 ]; then
         printf '%s\n' "$STATUS"
         echo 'Cassandra pronto para os testes.'
+bash scripts/aguardar_cql.sh
         exit 0
       fi
     fi
